@@ -1,6 +1,10 @@
 package converter;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 
 public class CSVConverter {
@@ -28,5 +32,82 @@ public class CSVConverter {
     * write the output files.
     */
     public void convertFolder(File inputsFolder, File outputsFolder) throws IOException {
+        createFolderIfNotExists(outputsFolder);
+
+        for (File file : inputsFolder.listFiles()) {
+            readDataFromInputsWritingInOutputs(file, outputsFolder);
+        }
     }
+
+    private static void createFolderIfNotExists(File outputsFolder) {
+        if (!outputsFolder.exists()) {
+          outputsFolder.mkdir();
+        }
+      }
+    
+      private static void readDataFromInputsWritingInOutputs(File file, File outputsFolder) {
+        StringBuilder text = new StringBuilder();
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
+          String line = bufferedReader.readLine();
+          text.append(line);
+          text.append("\n");
+    
+          while ((line = bufferedReader.readLine()) != null) {
+            text.append(treatInputsText(line));
+            text.append("\n");
+          }
+    
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+    
+        writeDataInOutputs(file, outputsFolder, text.toString());
+      }
+    
+      private static String treatInputsText(String line) {
+        String[] fields = line.split(",");
+        StringBuilder text = new StringBuilder();
+        text.append(treatName(fields[0]));
+        text.append(',');
+        text.append(treatDateOfBirth(fields[1]));
+        text.append(',');
+        text.append(fields[2]);
+        text.append(',');
+        text.append(treatCpf(fields[3]));
+        return text.toString();
+      }
+    
+      private static String treatName(String field) {
+        return field.toUpperCase();
+      }
+    
+      private static String treatDateOfBirth(String date) {
+        String[] dateFields= date.split("/");
+        return String.format("%s-%s-%s", dateFields[2], dateFields[1], dateFields[0]);
+      }
+    
+      private static String treatCpf(String field) {
+        StringBuilder text = new StringBuilder();
+        text.append(field.substring(0, 3));
+        text.append('.');
+        text.append(field.substring(3, 6));
+        text.append('.');
+        text.append(field.substring(6, 9));
+        text.append('-');
+        text.append(field.substring(9, 11));
+        return text.toString();
+      }
+    
+      private static void writeDataInOutputs(
+          File fileFromInputs,
+          File outputsFolder, String text) {
+        File outputFile = new File(outputsFolder, fileFromInputs.getName());
+    
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile, false))) {
+          writer.write(text);
+          writer.flush();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
 }
